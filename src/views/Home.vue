@@ -1,18 +1,34 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+
+    <div class="tooltip">
+      <h1>How will the corona numbers evolve?</h1>
+      <span class="tooltiptext">How will the different nations handle COVID-19? Here you can submit guesses on how many <br>
+      cases a country will have at a certain point in time and check it again to see how your predictions performed!</span>
+    </div>
+    <CoronaWeel/>
+
+    <Graph input-chart-data="chart"/>
+
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
+import CoronaWeel from '@/components/CoronaWeel.vue'
+import Graph from "../components/Graph";
 
 export default {
   name: 'Home',
   components: {
-    HelloWorld
+    CoronaWeel,
+    Graph
   }
 }
 </script>
+
+<style scoped>
+  h1 {
+    text-align: center !important;
+  }
+</style>
