@@ -1,8 +1,8 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">Home</router-link>
-        <p>Corona Case Predictions</p>
+      <router-link to="/">Predictions </router-link>
+        <p>What do you think?</p>
       <router-link to="/about">About</router-link>
     </div>
     <router-view/>

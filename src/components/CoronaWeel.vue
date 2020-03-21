@@ -1,12 +1,14 @@
 <template>
+  <div>
+    <p class="msg"> <span v-if="new_msg">{{recent_msg}}</span> <span><br></span></p>
   <div class="el">
-
     <div class="warpper" v-for="data in coronaData">
+      <!--
       <div class="known-cases">
         <p>{{data[1][data[1].length-1]["confirmed"]}}</p>
-      </div>
-      <div class="country-el">
-        <p>I think <h1>{{data[0]}}</h1> will have</p>
+      </div>-->
+      <div class="country-el" >
+        <p>I think <h1>{{data[0]}}</h1> will have </p>
         <input type="number" v-model="bets[data[0]]" @change="checkBet">
         <p>cases in
         <label for="nums" >
@@ -22,6 +24,8 @@
           <option>8</option>
           <option>9</option>
           <option>10</option>
+          <option>11</option>
+          <option>12</option>
         </select>
       </label>
         <label for="time">
@@ -30,40 +34,99 @@
             <option>day(s)</option>
             <option>week(s)</option>
             <option>month(s)</option>
+            <option>year(s)</option>
           </select>
         </label></p>
-      <button class="button">Submit</button>
+      <button class="button" @click="updateToggle">Submit</button>
       </div>
-    </div>
 
+      <Graph
+              v-on:childToParent="fromChild"
+              v-bind:input-chart-data="data"
+              v-bind:bet="{val:bets[data[0]], date:betDate}"
+              v-bind:update-toggle="toggle"
+              ref="graph"/>
+    </div>
+  </div>
   </div>
 </template>
 
 <script>
-export default {
+  import Graph from "../components/Graph";
+
+  export default {
   name: 'CoronaWeel',
   props: {
     // variables to give to component
   },
+    components: {
+      Graph
+    },
   data () {
     return {
+      new_msg: false,
       coronaData: {},
       bets: {},
+      validBets: [],
       recent_msg: '',
       selectedTime: '',
-      selectedNum: ''
+      selectedNum: '',
+      toggle: false,
+      betDate: '',
+      fromChild: '',
     }
   },
+    watch: {
+      recent_msg: function () {
+        console.log(this.recent_msg);
+        this.new_msg = true;
+        setTimeout(() => {  this.new_msg = false }, 2000);
+      },
+    },
   methods: {
+    updateToggle: function() {
+      // check if fields are selected
+      if (this.selectedTime.length > 0 && this.selectedNum.length > 0) {
+        // update time
+        let mult = 0;
+        if (this.selectedTime == "day(s)") {
+          mult = 1;
+        } else if (this.selectedTime == "week(s)") {
+          mult = 7
+        } else if (this.selectedTime == "month(s)") {
+          mult = 30
+        } else {
+          // year
+          mult = 365
+        }
+
+        const numDays = mult * this.selectedNum;
+        let date = new Date();
+        date.setDate(date.getDate() + numDays);
+        this.betDate = date.getFullYear()+'-'+(date.getMonth()+1)+'-'+date.getDate();
+
+        // update toggle
+        this.toggle = !this.toggle;
+      } else {
+        this.recent_msg = "Please select both time dropdown fields.";
+      }
+    },
+
     checkBet: function() {
         for (let i in this.coronaData) {
           const country = this.coronaData[i][0];
           const len = this.coronaData[i][1].length-1;
-          if (this.coronaData[i][1][len]["confirmed"] > this.bets[country]) {
+          const cases = this.coronaData[i][1][len]["confirmed"]
+          if (cases > this.bets[country]) {
             this.bets[country] = this.coronaData[i][1][len]["confirmed"];
-
-            this.recent_msg = "Bet adjusted to minimum of known cases."
-            console.log(this.recent_msg)
+            this.recent_msg = "Bet adjusted to minimum of known cases.";
+          } else {
+            if (cases < this.bets[country])  {
+              if (!this.validBets.includes(country)) {
+                this.validBets.push(country);
+                console.log("Valid bet registered for " + country)
+              }
+            }
           }
         }
       },
@@ -71,11 +134,11 @@ export default {
   created() {
     fetch("https://pomber.github.io/covid19/timeseries.json").then(response => response.json())
             .then(data => {
-              this.recent_msg = "Data loading..."
+              this.recent_msg = "Data loading...";
               let all=[];
               let latest={};
               for(let key in data){
-                if (data.hasOwnProperty(key) && data[key][data[key].length-1]["confirmed"] >1000) {
+                if (data.hasOwnProperty(key) && data[key][data[key].length-1]["confirmed"] >500) {
                   all.push([key, data[key]]);
                   latest[key] = data[key][data[key].length-1]["confirmed"]
                 }
@@ -85,23 +148,60 @@ export default {
                 return b[1][b[1].length - 1]["confirmed"] - a[1][a[1].length - 1]["confirmed"]
               });
 
-
               this.coronaData = all;
               this.bets = latest;
-              // data["Argentina"].forEach(({ date, confirmed, recovered, deaths }) => console.log(`${date} active cases: ${confirmed - recovered - deaths}`))
             })
-    // Get previous predictions
   }
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+  .msg {
+    text-align: center;
+    color: #b90e1f;
+    font-weight: bolder;
+
+    -webkit-animation: fadein 0.4s; /* Safari, Chrome and Opera > 12.1 */
+    -moz-animation: fadein 0.4s; /* Firefox < 16 */
+    -ms-animation: fadein 0.4s; /* Internet Explorer */
+    -o-animation: fadein 0.4s; /* Opera < 12.1 */
+    animation: fadein 0.4s;
+
+  }
+
+  @keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Firefox < 16 */
+  @-moz-keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Safari, Chrome and Opera > 12.1 */
+  @-webkit-keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Internet Explorer */
+  @-ms-keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  /* Opera < 12.1 */
+  @-o-keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+
 ul {
   list-style-type: none;
   padding: 0;
 }
-
 a {
   color: #b90e1f;
 }
@@ -116,8 +216,6 @@ a {
   width: 400px;
   text-align: center;
 }
-
-
 .select-css {
   font-size: 16px;
   font-family: sans-serif;
@@ -154,7 +252,6 @@ a {
 .select-css option {
   font-weight:normal;
 }
-
 .country-el{
   margin: 0 2em 2em 2em;
   padding: 0.5em;
@@ -162,7 +259,6 @@ a {
   display: block;
 
 }
-
 .known-cases p {
   font-size: 2em;
   margin: 0 0 0.7em 0;
@@ -170,17 +266,23 @@ a {
   font-weight: bolder;
 }
 input[type=number] {
+
+  margin: 0 0 0.7em 0;
+  color: #b90e1f;
+  font-weight: bolder;
   border-color: #b90e1f;
   border-style: solid;
   background-color: #2c3e50;
-  color: white;
   padding: 5px;
   box-sizing:border-box;
   font-size: 1.7em;
   width: 70%;
   text-align: center;
-}
 
+  background: url(https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/apple/237/microbe_1f9a0.png) no-repeat scroll 7px 7px;
+  background-size: 30px;
+  padding-left:30px;
+}
 .button {
   background-color: #171d2f; /* Green */
   border: none;
@@ -197,19 +299,17 @@ input[type=number] {
 ::-webkit-scrollbar {
   width: 1px;
 }
-
 /* Track */
 ::-webkit-scrollbar-track {
   background: #233446;
 }
-
 /* Handle */
 ::-webkit-scrollbar-thumb {
   background: #2c3e50;
 }
-
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
 </style>
