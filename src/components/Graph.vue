@@ -32,20 +32,24 @@ export default {
     methods: {
         updateURL() {
             // get url data
+            let added = false;
             const query = this.$route.query.bet;
             if (query !== undefined) {
                 this.urlQuery = JSON.parse(query);
             }
-            // TODO: ADD TO QUERY NOT OVERRIDE
-            console.log("start")
-            console.log(this.urlQuery)
             if (this.urlQuery.hasOwnProperty(this.bet.country)) {
-                this.urlQuery[this.bet.country].push([this.bet["date"], parseInt(this.bet["val"])]);
+                for (const item in this.urlQuery[this.bet.country]) {
+                    if (this.urlQuery[this.bet.country][item][0] === this.bet["date"]) {
+                        list.splice(item, 1, this.bet["val"]);
+                        added = true;
+                    }
+                }
+                if (!added) {
+                    this.urlQuery[this.bet.country].push([this.bet["date"], parseInt(this.bet["val"])]);
+                }
             } else {
                 this.urlQuery[this.bet.country] = [[this.bet["date"], parseInt(this.bet["val"])]];
             }
-            console.log(this.urlQuery)
-            console.log("end")
             this.$router.push({path: '/', query: {bet: JSON.stringify(this.urlQuery)}})
         },
         updateGraph(newBet, chart) {

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <p class="msg"> <span v-if="new_msg">{{recent_msg}}</span> <span><br></span></p>
+    <p class="msg"><span v-if="new_msg">{{recent_msg}}</span><span><br></span></p>
   <div class="el">
     <div class="warpper" v-for="data in coronaData">
       <div class="country-el" >
@@ -39,13 +39,15 @@
     data: function () {
       return {
         selectorOptions: {
-          "Valentines Day (14. April)": "2020-4-14" ,
-          "Mother’s Day (10. May)": "2020-5-10",
-          "Father’s Day (21. June)": "2020-6-21",
-          "World Humanitarian Day (19. August)": "2020-8-19",
-          "Halloween (31. October)": "2020-10-31",
-          "World Children's Day (20. November)": "2020-11-20",
-          "New Year's Eve (31. December)": "2020-12-31",
+          "24. March - World Tuberculosis Day ": "2020-3-24",
+          "2. April - World Autism Awareness Day": "2020-4-02",
+          "14. April - Valentines Day": "2020-4-14" ,
+          "25. April - World Malaria Day": "2020-4-25",
+          "10. May - Mothers Day": "2020-5-10",
+          "21. June - Fathers Day": "2020-6-21",
+          "18. August - World Humanitarian Day": "2020-8-19",
+          "31. October - Halloween": "2020-10-31",
+          "31. December - New Year's Eve": "2020-12-31",
         },
         new_msg: false,
         coronaData: {},
@@ -63,7 +65,7 @@
       recent_msg: function () {
         console.log(this.recent_msg);
         this.new_msg = true;
-        setTimeout(() => {  this.new_msg = false }, 2000);
+        setTimeout(() => {  this.new_msg = false }, 1500);
       },
     },
   methods: {
@@ -150,7 +152,7 @@
             }
           }
         }
-
+        this.$router.push({path: '/'})
       });
     }
   }
@@ -266,7 +268,6 @@ a {
   font-weight: bolder;
 }
 input[type=number] {
-
   color: #b90e1f;
   font-weight: bolder;
   border-color: #b90e1f;
@@ -281,18 +282,6 @@ input[type=number] {
   background: url(https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/apple/237/microbe_1f9a0.png) no-repeat scroll 7px 7px;
   background-size: 30px;
   padding-left:30px;
-}
-.button {
-  background-color: #171d2f; /* Green */
-  border: none;
-  color: white;
-  margin-top: 10px;
-  padding: 7px 16px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  width: 100%;
 }
 /* width */
 ::-webkit-scrollbar {

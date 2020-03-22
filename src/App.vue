@@ -1,15 +1,26 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">Predictions </router-link>
         <p>What do you think?</p>
-      <router-link to="/about">About</router-link>
     </div>
     <router-view/>
   </div>
 </template>
 
 <style>
+  .button {
+    background-color: #171d2f; /* Green */
+    border: none;
+    color: white;
+    margin-top: 10px;
+    padding: 7px 16px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    width: 100%;
+  }
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
