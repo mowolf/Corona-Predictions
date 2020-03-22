@@ -1,6 +1,5 @@
 <template>
   <div class="home">
-
     <div class="tooltip">
       <h1>😷 How bad will COVID-19 become? 😷</h1>
       <span class="tooltiptext">How will the different nations handle COVID-19? Here you can submit guesses on how many <br>
@@ -16,12 +15,11 @@
 <script>
 // @ is an alias to /src
 import CoronaWeel from '@/components/CoronaWeel.vue'
-
 export default {
   name: 'Home',
   components: {
     CoronaWeel
-  }
+  },
 }
 </script>
 

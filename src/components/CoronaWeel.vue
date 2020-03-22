@@ -3,48 +3,24 @@
     <p class="msg"> <span v-if="new_msg">{{recent_msg}}</span> <span><br></span></p>
   <div class="el">
     <div class="warpper" v-for="data in coronaData">
-      <!--
-      <div class="known-cases">
-        <p>{{data[1][data[1].length-1]["confirmed"]}}</p>
-      </div>-->
       <div class="country-el" >
-        <p>I think <h1>{{data[0]}}</h1> will have </p>
+        <p>I think <h1>{{data[0]}}</h1> will have</p>
         <input type="number" v-model="bets[data[0]]" @change="checkBet">
-        <p>cases in
-        <label for="nums" >
-        <select class="select-css" v-model="selectedNum" id="nums">
-          <option disabled value=""># of</option>
-          <option>1</option>
-          <option>2</option>
-          <option>3</option>
-          <option>4</option>
-          <option>5</option>
-          <option>6</option>
-          <option>7</option>
-          <option>8</option>
-          <option>9</option>
-          <option>10</option>
-          <option>11</option>
-          <option>12</option>
-        </select>
-      </label>
+        <p>cases on</p>
         <label for="time">
           <select v-model="selectedTime" id="time" class="select-css">
-            <option disabled value="">weeks or months</option>
-            <option>day(s)</option>
-            <option>week(s)</option>
-            <option>month(s)</option>
-            <option>year(s)</option>
+            <option value="" disabled selected>select a day</option>
+            <option v-for="item in Object.keys(selectorOptions)">{{item}}</option>
           </select>
-        </label></p>
+        </label>
       <button class="button" @click="updateToggle">Submit</button>
       </div>
-
       <Graph
-              v-on:childToParent="fromChild"
+              v-bind:oldBets="oldBets[data[0]]"
               v-bind:input-chart-data="data"
-              v-bind:bet="{val:bets[data[0]], date:betDate}"
+              v-bind:bet="{val:bets[data[0]], date:betDate, country: data[0]}"
               v-bind:update-toggle="toggle"
+              v-bind:publicBets="publicBets"
               ref="graph"/>
     </div>
   </div>
@@ -53,29 +29,36 @@
 
 <script>
   import Graph from "../components/Graph";
+  import firebase from 'firebase';
 
   export default {
   name: 'CoronaWeel',
-  props: {
-    // variables to give to component
-  },
     components: {
       Graph
     },
-  data () {
-    return {
-      new_msg: false,
-      coronaData: {},
-      bets: {},
-      validBets: [],
-      recent_msg: '',
-      selectedTime: '',
-      selectedNum: '',
-      toggle: false,
-      betDate: '',
-      fromChild: '',
-    }
-  },
+    data: function () {
+      return {
+        selectorOptions: {
+          "Valentines Day (14. April)": "2020-4-14" ,
+          "Mother’s Day (10. May)": "2020-5-10",
+          "Father’s Day (21. June)": "2020-6-21",
+          "World Humanitarian Day (19. August)": "2020-8-19",
+          "Halloween (31. October)": "2020-10-31",
+          "World Children's Day (20. November)": "2020-11-20",
+          "New Year's Eve (31. December)": "2020-12-31",
+        },
+        new_msg: false,
+        coronaData: {},
+        bets: {},
+        validBets: [],
+        recent_msg: '',
+        selectedTime: '',
+        toggle: false,
+        betDate: '',
+        oldBets: {},
+        publicBets: {}
+      }
+    },
     watch: {
       recent_msg: function () {
         console.log(this.recent_msg);
@@ -86,32 +69,15 @@
   methods: {
     updateToggle: function() {
       // check if fields are selected
-      if (this.selectedTime.length > 0 && this.selectedNum.length > 0) {
-        // update time
-        let mult = 0;
-        if (this.selectedTime == "day(s)") {
-          mult = 1;
-        } else if (this.selectedTime == "week(s)") {
-          mult = 7
-        } else if (this.selectedTime == "month(s)") {
-          mult = 30
-        } else {
-          // year
-          mult = 365
-        }
-
-        const numDays = mult * this.selectedNum;
-        let date = new Date();
-        date.setDate(date.getDate() + numDays);
-        this.betDate = date.getFullYear()+'-'+(date.getMonth()+1)+'-'+date.getDate();
-
+      if (this.selectedTime.length > 0) {
+        // set time
+        this.betDate = this.selectorOptions[this.selectedTime];
         // update toggle
         this.toggle = !this.toggle;
       } else {
         this.recent_msg = "Please select both time dropdown fields.";
       }
     },
-
     checkBet: function() {
         for (let i in this.coronaData) {
           const country = this.coronaData[i][0];
@@ -131,28 +97,63 @@
         }
       },
   },
-  created() {
-    fetch("https://pomber.github.io/covid19/timeseries.json").then(response => response.json())
-            .then(data => {
-              this.recent_msg = "Data loading...";
-              let all=[];
-              let latest={};
-              for(let key in data){
-                if (data.hasOwnProperty(key) && data[key][data[key].length-1]["confirmed"] >500) {
-                  all.push([key, data[key]]);
-                  latest[key] = data[key][data[key].length-1]["confirmed"]
-                }
+    created: function () {
+      // get corona data
+      fetch("https://pomber.github.io/covid19/timeseries.json").then(response => response.json())
+      .then(data => {
+        this.recent_msg = "Data loading...";
+        let all = [];
+        let latest = {};
+        for (let key in data) {
+          if (data.hasOwnProperty(key) && data[key][data[key].length - 1]["confirmed"] > 500) {
+            all.push([key, data[key]]);
+            latest[key] = data[key][data[key].length - 1]["confirmed"]
+          }
+        }
+        all.sort(function (a, b) {
+          return b[1][b[1].length - 1]["confirmed"] - a[1][a[1].length - 1]["confirmed"]
+        });
+        // get bet data
+        let db = firebase.firestore();
+        const betsRef = db.collection('bets');
+        let publicBets = {};
+        betsRef.get()
+                .then(snap => {
+                  snap.docs.map(doc => {
+                    if (publicBets.hasOwnProperty(doc.data().country)) {
+                      publicBets[doc.data().country].append([doc.data().betValue, doc.data().betDate])
+                    } else {
+                      // first init country
+                      publicBets[doc.data().country] = [doc.data().betValue, doc.data().betDate]
+                    }
+                  })
+                }).catch(err => {
+                  console.log('Error getting document', err)
+                });
+
+        // save data
+        this.publicBets = publicBets;
+        this.coronaData = all;
+        this.bets = latest;
+
+        // get url data
+        const query = this.$route.query.bet;
+        if (query !== undefined) {
+          const queryObj = JSON.parse(query);
+          for (const key in queryObj) {
+            for (const item in queryObj[key]) {
+              if (this.oldBets.hasOwnProperty(key)) {
+                this.oldBets[key].push({date: queryObj[key][item][0], val: queryObj[key][item][1], country: key});
+              } else {
+                this.oldBets[key] = [{date: queryObj[key][item][0], val: queryObj[key][item][1], country: key}];
               }
+            }
+          }
+        }
 
-              all.sort(function(a, b) {
-                return b[1][b[1].length - 1]["confirmed"] - a[1][a[1].length - 1]["confirmed"]
-              });
-
-              this.coronaData = all;
-              this.bets = latest;
-            })
+      });
+    }
   }
-}
 </script>
 
 <style scoped>
@@ -160,7 +161,6 @@
     text-align: center;
     color: #b90e1f;
     font-weight: bolder;
-
     -webkit-animation: fadein 0.4s; /* Safari, Chrome and Opera > 12.1 */
     -moz-animation: fadein 0.4s; /* Firefox < 16 */
     -ms-animation: fadein 0.4s; /* Internet Explorer */
@@ -267,7 +267,6 @@ a {
 }
 input[type=number] {
 
-  margin: 0 0 0.7em 0;
   color: #b90e1f;
   font-weight: bolder;
   border-color: #b90e1f;
